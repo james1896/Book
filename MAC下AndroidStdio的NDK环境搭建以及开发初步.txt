@@ -1,0 +1,235 @@
+MAC 下Android Stdio的NDK环境搭建以及开发初步
+发表于2016/5/22 17:57:43  938人阅读
+分类： ndk--jni android开发 基础性讲解 AS
+在mac系统下使用android stdio进行jni开发需要使用到NDK，下面来介绍下在mac下配置NDK环境以及进行jni调用的实例初步。
+首先介绍下JNI是干啥的：
+JNI是Java语言提供的Java和C/C++相互沟通的机制，Java可以通过JNI调用本地的C/C++代码，本地的C/C++的代码也可以调用java代码。JNI 是本地编程接口，Java和C/C++互相通过的接口。Java通过C/C++使用本地的代码的一个关键性原因在于C/C++代码的高效性。
+NDk的介绍如下：
+NDK是一系列工具的集合。它提供了一系列的工具，帮助开发者快速开发C（或C++）的动态库，并能自动将so和java应用一起打包成apk。这些工具对开发者的帮助是巨大的。它集成了交叉编译器，并提供了相应的mk文件隔离CPU、平台、ABI等差异，开发人员只需要简单修改mk文件（指出“哪些文件需要编译”、“编译特性要求”等），就可以创建出so。它可以自动地将so和Java应用一起打包，极大地减轻了开发人员的打包工作
+介绍完了这2个词汇的含义，下面我们就来在mac系统上进行搭建NDK的环境
+
+1 . 下载并初始化ndk环境
+本文演示所用版本如下：
+* 		Android Stdio 2.0
+* 		Android NDK 12
+* 		Java version 1.7
+* 		Mac os 10.10.5
+首先先去下载Android NDK的相应组件： 
+具体的路径如下：Android stdio—>Appearance&Behavior–>System Setting –>Android SDK–>SDK Tools
+
+按照上图所示，在右侧的Android NDK 前面打上对勾，之后进行下载，下载完毕之后点击ok进行保存。
+之后我们可以查看local.properties文件，在该文件中我们就可以看到自动配置好的ndk的路径：
+ndk.dir=/Users/zwjian/Downloads/android-sdk-macosx/ndk-bundle
+sdk.dir=/Users/zwjian/Downloads/android-sdk-macosx
+* 		1
+* 		2
+
+2 . 接下来我们创建一个空项目（Module），完成一个android项目的初始创建。
+首先我们需要先创建一个类来保存相应的native修饰的函数（即所谓的接口类和接口方法）：
+public class JniHello {
+   //使用静态代码块来加载相应的so文件
+   static {
+       System.loadLibrary("hello");//需要加载的so文件的名称
+   }
+
+   //声明一个由 native 修饰的函数
+   public native String SayHello();
+}
+* 		1
+* 		2
+* 		3
+* 		4
+* 		5
+* 		6
+* 		7
+* 		8
+* 		9
+接下来我们开始进行编译，使java文件生成class文件，具体操作点击如下标记位置即可（或者使用build中的make Project）：
+
+必须要确保编译没有任何错误，我们可以在控制台中的message中进行查看，确保没有错误才算编译成功。
+
+我们编译完成之后可以在相应项目的如下路径中看到相应的class文件：
+
+
+3 . 下面我们开始进行生成头文件的操作：
+利用android stdio 的Terminal进行把命令行的编写：
+zwjian:MyApplication zwjian$ cd  /Users/zwjian/AndroidStudioProjects/MyApplication/JniTest/src/main/java
+
+zwjian:java zwjian$ javah -d jni com.example.zwjian.myapplication.JniHello
+
+zwjian:java zwjian$ 
+之后我们就可以在项目目录中看到编译完成的jni文件以及里面的.h的头文件。需要指出的是必须要将jni文件移至main文件目录下，与java文件同级目录（不然在运行时无法生成.so文件）截图如下：
+
+下一步我们在jni文件下新建一个c文件(命名可任意，本文中定义为HelloJni.c)，并且在该c文件中实现上图右侧中所标记的函数，相应代码如下：
+//加载生成的头文件
+#include “com_example_zwjian_myapplication_JniHello.h”
+
+//实现该头文件中包含的方法
+JNIEXPORT jstring JNICALL Java_com_example_zwjian_myapplication_JniHello_SayHello
+  (JNIEnv * env, jobject obj){
+    //要执行的代码
+  }
+* 		1
+* 		2
+* 		3
+* 		4
+* 		5
+* 		6
+* 		7
+* 		8
+完成上述操作之后我们发现在生成的头文件上侧会有如下所示的提示：
+
+我们要做的就是在gradle.properties文件中添加如下一行代码：
+android.useDeprecatedNdk=true
+* 		1
+之后在该app的build.gradle文件，在defaultConfig节点里添加一下代码，并执行同步操作
+ndk {
+    //需要生成的so文件名称
+    moduleName "hello" 
+    //适配各种架构的cpu
+    abiFilters "armeabi", "armeabi-v7a", "x86"  
+    }
+* 		1
+* 		2
+* 		3
+* 		4
+* 		5
+* 		6
+该app的完整的build.gradle文件如下：
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 23
+    buildToolsVersion "23.0.1"
+
+    defaultConfig {
+        applicationId "com.example.zwjian.myapplication"
+        minSdkVersion 14
+        targetSdkVersion 23
+        versionCode 1
+        versionName "1.0"
+
+        ndk {
+            //需要生成的so文件名称
+            moduleName "hello" 
+            //适配各种架构的cpu
+            abiFilters "armeabi", "armeabi-v7a", "x86"  
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    testCompile 'junit:junit:4.12'
+    compile 'com.android.support:appcompat-v7:23.1.0'
+}
+* 		1
+* 		2
+* 		3
+* 		4
+* 		5
+* 		6
+* 		7
+* 		8
+* 		9
+* 		10
+* 		11
+* 		12
+* 		13
+* 		14
+* 		15
+* 		16
+* 		17
+* 		18
+* 		19
+* 		20
+* 		21
+* 		22
+* 		23
+* 		24
+* 		25
+* 		26
+* 		27
+* 		28
+* 		29
+* 		30
+* 		31
+* 		32
+* 		33
+现在我们可以在c文件中实现自己的代码了，示例如下：
+#include "com_example_zwjian_myapplication_JniHello.h"
+
+/*
+ * Class:     com_example_zwjian_myapplication_JniHello
+ * Method:    SayHello
+ * Signature: ()Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_example_zwjian_myapplication_JniHello_SayHello
+        (JNIEnv *env, jobject obj) {
+    char *hello = "hello from JNI";
+    (*env)->NewStringUTF(env, hello);
+
+}
+* 		1
+* 		2
+* 		3
+* 		4
+* 		5
+* 		6
+* 		7
+* 		8
+* 		9
+* 		10
+* 		11
+* 		12
+* 		13
+
+4 .如上设置完成之后，我们就可以点击Build的Rebuild Project进行重新构造，没有任何错误之后，我们就可以在左侧的project的响应目录中看到生成的.so文件了。
+
+好了，最后我们就可以在activity中进行调用了（本例在声明的时候没有将调用的方法设置成静态，故使用new对象的方式进行调用。舍设置为静态方法的方式比较推荐，读者可自行修改）：
+/**
+ * @des the demo of set android jni
+ */
+public class MainActivity extends AppCompatActivity {
+
+    private TextView text_tv;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        JniHello hello = new JniHello();
+
+        text_tv = (TextView) findViewById(R.id.text_tv);
+        text_tv.setText(hello.SayHello());
+    }
+}
+* 		1
+* 		2
+* 		3
+* 		4
+* 		5
+* 		6
+* 		7
+* 		8
+* 		9
+* 		10
+* 		11
+* 		12
+* 		13
+* 		14
+* 		15
+* 		16
+* 		17
+* 		18
+以上代码十分简单，调用JniHello类中的SayHello方法，并显示在TextView中。（读者也可以将该方法设置成静态方法），运行结果如下：
+
+
+以上就完成了android开发中NDK的环境配置以及最基础的开发流程，如有欠缺之处请各位读者批评指正。

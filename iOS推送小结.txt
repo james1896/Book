@@ -1,0 +1,258 @@
+
+
+iOS推送小结（证书的生成、客户端的开发、服务端的开发）
+作者区域
+
+*********************************************************
+*********************************************************
+Domain=NSCocoaErrorDomain Code=3010 "remote notifications are not supported
+
+解决方案:
+APNs不能用模拟器调试
+
+code =3000   
+解决方案:
+Capabilities  打开pushNotification 开关
+
+*********************************************************
+*********************************************************
+
+接下来试一试第二种方法，我们使用PHP来发送通知（其实运行PHP并不需要另外搭建服务器和下载程序，Mac默认支持PHP运行，不信到命令行运行一下php）。
+这种方式相对来说麻烦一些，但是也是实际使用的时候会采取的方式。我们需要进一步处理私钥和证书文件。
+1 .首先将证书文件和私钥处理成单个方便使用的pem文件，假设CSR、p12和cer文件都放在桌面上。
+$ cd ~/Desktop
+$ls 
+aps_development.cer
+CertificateSigningRequest.certSigningRequest
+PushKey.p12
+2 .将aps_development.cer转换为pem文件。
+$ openssl x509 -in aps_development.cer -inform der -out PushCert.pem
+$ ls
+aps_development.cer
+CertificateSigningRequest.certSigningRequest
+PushCert.pem
+PushKey.p12
+3 .将p12私钥文件转换为pem文件。
+$ openssl pkcs12 -nocerts -out PushKey.pem -in PushKey.p12 
+Enter Import Password:
+MAC verified OK
+Enter PEM pass phrase:
+Verifying - Enter PEM pass phrase:
+4 .将两个文件合成同一个。
+$ cat PushCert.pem PushKey.pem > ck.pem
+$ ls
+aps_development.cer
+CertificateSigningRequest.certSigningRequest
+ck.pem
+PushCert.pem
+PushKey.pem 
+PushKey.p12
+
+
+
+
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
+5 .测试证书是否有效。
+$ openssl s_client -connect gateway.sandbox.push.apple.com:2195 -cert PushCert.pem -key PushKey.pem 
+
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
+*******************************************************
+*******************************************************
+
+ 作者 寒桥 关注用户按钮 关注 文章数据信息
+如果文章更新时间大于发布时间，那么使用 tooltip 显示更新时间 2015.04.15 16:26 字数 1802 阅读 1767评论 0喜欢 22
+如果是当前作者，加入编辑按钮
+文章内容
+1.推送过程简介
+（1）App启动过程中，使用UIApplication::registerForRemoteNotificationTypes函数与苹果的APNS服务器通信，发出注册远程推送的申请。若注册成功，回调函数application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken 会被触发，App可以得到deviceToken，该token就是一个与设备相关的字符串.
+（2）App获取到DeviceToken后，将DeviceToken发送给自己的服务端。
+（3）服务端拿到DeviceToken以后，使用证书文件，向苹果的APNS服务器发起一个SSL连接。连接成功之后，发送一段JSON串，该JSON串包含推送消息的类型及内容。
+（4）苹果的APNS服务器得到JSON串以后，向App发送通知消息，使得App的回调函数application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo被调用，App从userInfo中即可得到推送消息的内容。
+2. 用到的证书文件及生成过程
+（1）certSigningRequest文件，该文件在MAC系统中生成，用于在Apple网站上申请推送证书文件。
+生成过程：
+打开应用程序中的“钥匙串访问”软件，从菜单中选择 “钥匙串访问”-》“证书助理”-》“从证书颁发机构请求证书”，邮箱和名称随便填写，然后选择保存到磁盘，就可以在本地生成一个CertificateSigningRequest.certSigningRequest文件。
+（2）注册一个支持push的app id，后面会用到。
+生成过程：
+进入developer.apple.com，选择member center - Certificates, Identifiers & Profiles  -  Identifiers- App Ids，然后选择注册app id，设置appid名称，同时，app id suffix一栏必须选择explicit app id，然后设置bundle id，最后勾选 App Services中的 Push Notifications，这样就可以注册一个支持push的aphid。
+（3） 推送证书cer文件，该文件在developer.apple.com中生成，用于生成服务端需要的文件。
+生成过程：
+进入developer.apple.com，选择member center - Certificates, Identifiers & Profiles  -  Certificates，然后选择创建certificate，类型分为Development和Product。这里以Development为例，选择Apple Push Notification service SSL (Sandbox) ，然后下一步，选择之前生成的支持push的AppId，然后下一步，提交之前创建的CSR文件，再下一步就可以生成cer文件，然后保存到本地。
+（4）生成服务端使用的证书文件。如果是使用网上的mac 版PushMeBaby工具，在mac机器上进行推送消息的发送，那么有上面的cer文件就够了。如果是使用PHP、java/c#开发自己的服务端，那么还需要将上面的cer文件做一个转换，生成pem文件或者p12文件。
+生成php用的pem文件过程为：
+首先双击前面保存的cer文件，此时会打开“钥匙串访问”软件，里面会出现一个Apple Development  IOS push services证书，一个公用密钥和一个专用秘钥，秘钥的名称与证书助理中填写的名称一致。
+选中证书，导出为 apns-dev-cert.p12 文件
+选中专有秘钥，导出为apns-dev-key.p12文件
+通过终端命令将这些文件转换为PEM格式：
+openssl pkcs12 -clcerts -nokeys -out apns-dev-cert.pem -in apns-dev-cert.p12
+openssl pkcs12 -nocerts -out apns-dev-key.pem -in apns-dev-key.p12
+最后， 需要将两个pem文件合并成一个apns-dev.pem文件，此文件在连接到APNS时需要使用：
+cat apns-dev-cert.pem apns-dev-key-noenc.pem > apns-dev.pem
+生成java/c#用的p12文件过程为：
+openssl pkcs12 -clcerts -nokeys -out apns-dev-cert.pem -in apns-dev-cert.p12
+openssl pkcs12 -nocerts -out apns-dev-key.pem -in apns-dev-key.p12
+openssl pkcs12 -export -in apns-dev-cert.pem -inkey apns-dev-key.pem -certfile CertificateSigningRequest.certSigningRequest -name "push" -out push.p12
+（5）生成XCODE使用的provisioning文件,该文件用于真机调试。
+生成过程：
+进入developer.apple.com，选择member center - Certificates, Identifiers & Profiles  -  Provisioning Profiles，然后选择创建Provisioning  file，接着选择iOS App Development ，下一步选择AppId，选中之前建立的支持push的appid，接着下一步选择支持push的certificate，下一步勾选需要支持的device id，最后一步设置provisioning文件的文件名，这样provisioning文件就生成了。
+3. 服务端的开发
+（1）如果只是希望在mac电脑上测试一下消息的推送，可以使用PushMeBaby工具，使用起来比较简单。该工具是开源的，可以从https://github.com/stefanhafeneger/PushMeBaby 下载，代码的执行过程实际上就是设置一下SSL证书，然后连接APNS，接着发送JSON数据。由于要处理SSL逻辑，因此代码稍微多点。在使用工具时，将工程资源中的cer文件替换成自己的cer文件，然后将代码中的deviceToken替换成自己设备的deviceToken即可。
+（2）使用php开发服务端
+由于php已经内置了ssl模块，因此使用php连接APNS服务器来发送json的过程实际上是很简单的，代码如下：
+该文件可以放到服务器中通过浏览器来访问，也可以通过命令行的方式来解释执行，代码为：$ php -f Pusher.php
+复制代码
+array("alert" => 'message',"badge" => 2,"sound"=>'default'));  //推送方式，包含内容和声音$$ctx = stream_context_create();
+//如果在Windows的服务器上，寻找pem路径会有问题，路径修改成这样的方法：
+//$pem = dirname(__FILE__) . '/' . 'apns-dev.pem';
+//linux 的服务器直接写pem的路径即可
+stream_context_set_option($ctx,"ssl","local_cert","apns-dev.pem");
+$pass = "xxxxxx";stream_context_set_option($ctx, 'ssl', 'passphrase', $pass);//
+//此处有两个服务器需要选择，如果是开发测试用，选择第二名sandbox的服务器并使用Dev的pem证书，如果是正式发布，使用Product的pem并选用正式的服务器
+$fp = stream_socket_client("ssl://gateway.push.apple.com:2195", $err, $errstr, 60, STREAM_CLIENT_CONNECT, $ctx);
+$fp = stream_socket_client("ssl://gateway.sandbox.push.apple.com:2195", $err, $errstr, 60, STREAM_CLIENT_CONNECT, $ctx);
+if (!$fp)
+{echo "Failed to connect $err $errstrn";return;}
+print "Connection OK\n";
+$payload = json_encode($body);$msg = chr(0) . pack("n",32) . pack("H*", str_replace(' ', '', $deviceToken)) . pack("n",strlen($payload)) . $payload;
+echo "sending message :" . $payload ."\n";
+fwrite($fp, $msg);  fclose($fp);
+?>
+复制代码
+4. 客户端的开发
+（1）下载前面建立的cer文件和provisioning文件，双击，导入到xcode中，在build setting中code signing一栏里选择这两个文件的名称，这样就可以将支持push的app部署到真机中。
+（2）处理推送消息
+客户端对推送消息的处理分两种情况：
+一. 在App没有运行的情况下，系统收到推送消息，用户点击推送消息，启动App。此时，不会执行前面提到的          didReceiveRemoteNotification函数，而是在App的applicationDidFinishLaunching函数中处理推送，通过以下代码可以获取推送消息中的数据： NSDictionary *userInfo =[launchOptionsobjectForKey:UIApplicationLaunchOptionsRemoteNotificationKey];
+二 . 当APP处于前台时，系统收到推送消息，此时系统不会弹出消息提示，会直接触发application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo函数，推送数据在userInfo字典中。
+当App处于后台时，如果系统收到推送消息，当用户点击推送消息时，会执行application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo函数，
+此时AppDelegate中函数执行的顺序为：
+applicationWillEnterForeground
+application:didReceiveRemoteNotification
+applicationDidBecomeActiveI
+
+
+
+*****************************
+****************************************
+**************************************************
+***********************************************************
+*********************************************************************
+***********************************************************************************
+************************************************************************************************
+
+关于iOS特定设别推送（特定用户推送）【原】
+
+在这里，我就不哆嗦如何制作推送证书之类的了，网上一搜一大堆。
+我们现在很多开发者的推送，就是集成第三方的推送SDK，然后通过第三方的推送平台帮我们进行推送。其实，这种推送（如JPush），一般只能广播式地推送，就是推送给所有用户，或者是分群推送（这种分群，是含糊分群，如活跃用户，系统是iOS9的用户等）（当然，如果后台服务器也同时集成JPush的sdk话，就可以特定用户推送了）。
+我现在要说的是，如何做到像QQ、微信那样，特定推送到某个用户呢？！
+ 
+先简要阐明一下iOS推送的原理：和Android不同（谷歌被墙了，在中国没有专门的推送服务器），苹果拥有自己的APNS.
+推送的流程是这样的，程序运行起来以后，会判断是否这个程序要推送，如果要的话会需要将手机和推送证书生成的一个唯一标识字符串（decice token）传到我们自己的服务器去，服务器根据这个token和一个服务器端的证书文件一起将配合，将一个推送消息发给苹果的apns服务器，苹果根据这个token发送给指定的设备。所以只要你在服务器端将登录的用户的用户信息和这个token做一个关联，完全可以指定发给某一个人，而不是发给所有人。--某位网友
+苹果的推送，走的是socket协议，所以说，不用我们自己在进程中开一个线程来维持和自己服务器的长连接。
+下面我就直接上代码：
+ 
+ios消息推送，是通过获取设备token来标记设备，也是通过token来实现Apple Push Notification Service的消息推送定位。
+那怎么获取设备token？
+1：设置好应用的push证书，并打包成功；
+2：在delegate中实现
+
+1 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions  
+2 {  
+3         [[UIApplication sharedApplication] registerForRemoteNotificationTypes:  
+4         UIRemoteNotificationTypeBadge | UIRemoteNotificationTypeSound |         UIRemoteNotificationTypeAlert];  
+
+MARK:IOS 8以后，请用下面新的api
+    [[UIApplication sharedApplication]registerUserNotificationSettings:[UIUserNotificationSettings                                                                      settingsForTypes:(UIUserNotificationTypeSound|UIUserNotificationTypeAlert|UIUserNotificationTypeBadge) categories:nil]];
+    [[UIApplication sharedApplication]registerForRemoteNotifications];
+5 }      
+
+ 
+3:获取token，并保存下来，这里需要保存到自己的服务端，然后给apple服务器推送消息时，需要带上token作为最终需要接受消息的设备标记。否则，目标设置无法接受到消息，apple也不知道推送给那个设备。
+1
+2
+3
+4
+5
+6
+7
+8	- (void)application:(UIApplication*)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData*)deviceToken 
+{ 
+NSLog(@"deviceToken -- >> %@",deviceToken); 
+NSString *pushToken = [[[[deviceToken description] 
+stringByReplacingOccurrencesOfString:@"<" withString:@""] 
+stringByReplacingOccurrencesOfString:@">" withString:@""] 
+stringByReplacingOccurrencesOfString:@" " withString:@""];  <br>//MARK:这里，发送网络请求，把该用户的ID和该token发送到自己的服务器，建立关系，当需要发送消息的时候，服务器就可以查表获得token，并且发送相应的消息到APNs，让APNs去推送。<br>
+} 
+ 
+ 
+4.如果对消息推送比较严格的，而APNs的推送，又不能确保每次必定送达。关于推送是否成功，或者失败，可以在回调里面对相应的消息进行判断，然后再反馈给服务器，然服务器进行相应的判断（是否再次推送）。
+ 
+5.同一台设备，同一个app，每次返回token是相同的。
+
+
+
+
+
+
+
+
+*****************************
+****************************************
+**************************************************
+***********************************************************
+*********************************************************************
+***********************************************************************************
+************************************************************************************************
+
+PHP服务器端
+<?php
+
+// Put your device token here (without spaces):
+$deviceToken = '7eced43a1f429bc177a8495d2f3f23f62dd59c5bc8e3aefd1fa507ac0cc1299e';
+
+// Put your private key's passphrase here:
+$passphrase = '123456';
+
+// Put your alert message here:
+$message = 'My first push notification!';
+
+////////////////////////////////////////////////////////////////////////////////
+
+$ctx = stream_context_create();
+stream_context_set_option($ctx, 'ssl', 'local_cert', 'ck.pem');
+stream_context_set_option($ctx, 'ssl', 'passphrase', $passphrase);
+
+// Open a connection to the APNS server
+$fp = stream_socket_client(
+	'ssl://gateway.sandbox.push.apple.com:2195', $err,
+	$errstr, 60, STREAM_CLIENT_CONNECT|STREAM_CLIENT_PERSISTENT, $ctx);
+
+if (!$fp)
+	exit("Failed to connect: $err $errstr" . PHP_EOL);
+
+echo 'Connected to APNS' . PHP_EOL;
+
+// Create the payload body
+$body['aps'] = array(
+	'alert' => $message,
+	'sound' => 'default'
+	);
+
+// Encode the payload as JSON
+$payload = json_encode($body);
+
+// Build the binary notification
+$msg = chr(0) . pack('n', 32) . pack('H*', $deviceToken) . pack('n', strlen($payload)) . $payload;
+
+// Send it to the server
+$result = fwrite($fp, $msg, strlen($msg));
+
+if (!$result)
+	echo 'Message not delivered' . PHP_EOL;
+else
+	echo 'Message successfully delivered' . PHP_EOL;
+
+// Close the connection to the server
+fclose($fp);

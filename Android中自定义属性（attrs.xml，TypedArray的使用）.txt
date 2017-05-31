@@ -1,0 +1,245 @@
+Android中自定义属性（attrs.xml，TypedArray的使用）
+
+做Android布局是件很享受的事，这得益于他良好的xml方式。使用xml可以快速有效的为软件定义界面。可是有时候我们总感觉官方定义的一些基本组件不够用，自定义组件就不可避免了。那么如何才能做到像官方提供的那些组件一样用xml来定义他的属性呢？现在我们就来讨论一下他的用法。
+1、添加文件attrs.xml，位于res\values目录下：
+
+1 <?xml version="1.0" encoding="utf-8"?> 
+2 <resources> 
+3     <declare-styleable name="myView"> 
+4         <attr name="textColor" format="color"/> 
+5         <attr name="textSize" format="dimension"/> 
+6     </declare-styleable> 
+7 </resources>
+
+2、创建自定义控件：
+
+ 1 package com.szy.custom; 
+ 2  
+ 3 import com.szy.custom.R; 
+ 4  
+ 5 import android.content.Context; 
+ 6 import android.content.res.TypedArray; 
+ 7 import android.graphics.Canvas; 
+ 8 import android.graphics.Color; 
+ 9 import android.graphics.Paint; 
+10 import android.graphics.Rect; 
+11 import android.graphics.Paint.Style; 
+12 import android.util.AttributeSet; 
+13 import android.view.View; 
+14  
+15 public class MyView extends View { 
+16     private Paint myPaint; 
+17     private static final String myString = "Hello CustomView!"; 
+18  
+19     public MyView(Context context) { 
+20         super(context); 
+21         // TODO Auto-generated constructor stub 
+22      } 
+23      
+24     public MyView(Context context, AttributeSet attr) { 
+25         super(context, attr); 
+26          myPaint = new Paint(); 
+27          TypedArray a = context.obtainStyledAttributes(attr, R.styleable.myView);//TypedArray是一个数组容器 
+28         float textSize = a.getDimension(R.styleable.myView_textSize, 30);//防止在XML文件里没有定义，就加上了默认值30 
+29         int textColor = a.getColor(R.styleable.myView_textColor, 0xFFFFFFFF);//同上,这里的属性是:名字_属性名 
+30          myPaint.setTextSize(textSize); 
+31          myPaint.setColor(textColor); 
+32          a.recycle();//我的理解是：返回以前取回的属性，供以后使用。以前取回的可能就是textSize和textColor初始化的那段 
+33      } 
+34     @Override 
+35     protected void onDraw(Canvas canvas) { 
+36         // TODO Auto-generated method stub 
+37         super.onDraw(canvas); 
+38         //myPaint = new Paint(); 
+39          myPaint.setColor(Color.RED); 
+40          myPaint.setStyle(Style.FILL); 
+41          
+42          canvas.drawRect(new Rect(10,10,100,100), myPaint); 
+43          myPaint.setColor(Color.WHITE); 
+44          canvas.drawText(myString, 10, 100, myPaint); 
+45      } 
+46 }
+
+3、在Activity布局文件中使用自定义控件：
+
+ 1 <?xml version="1.0" encoding="utf-8"?> 
+ 2 <LinearLayout xmlns:android="<a href="http://schemas.android.com/apk/res/android">http://schemas.android.com/apk/res/android</a>" 
+ 3     xmlns:test="<a href="http://schemas.android.com/apk/res/com.szy.custom">http://schemas.android.com/apk/res/com.szy.custom</a>" 
+ 4     android:orientation="vertical" 
+ 5     android:layout_width="fill_parent" 
+ 6     android:layout_height="fill_parent" 
+ 7     > 
+ 8 <TextView   
+ 9     android:layout_width="fill_parent"  
+10     android:layout_height="wrap_content"  
+11     android:text="@string/hello" 
+12     /> 
+13 <com.adnroid.test.MyView 
+14     android:layout_width="fill_parent" 
+15     android:layout_height="fill_parent" 
+16     test:textSize="10px" 
+17     test:textColor="#fff" 
+18     /> 
+19 </LinearLayout>
+
+ 
+附：Android中自定义属性的格式详解
+1. reference：参考某一资源ID。
+    （1）属性定义：
+            <declare-styleable name = "名称">
+                   <attr name = "background" format = "reference" />
+            </declare-styleable>
+    （2）属性使用：
+             <ImageView
+                     android:layout_width = "42dip"
+                     android:layout_height = "42dip"
+                     android:background = "@drawable/图片ID"
+                     />
+2. color：颜色值。
+    （1）属性定义：
+            <declare-styleable name = "名称">
+                   <attr name = "textColor" format = "color" />
+            </declare-styleable>
+    （2）属性使用：
+            <TextView
+                     android:layout_width = "42dip"
+                     android:layout_height = "42dip"
+                     android:textColor = "#00FF00"
+                     />
+3. boolean：布尔值。
+    （1）属性定义：
+            <declare-styleable name = "名称">
+                   <attr name = "focusable" format = "boolean" />
+            </declare-styleable>
+    （2）属性使用：
+            <Button
+                    android:layout_width = "42dip"
+                    android:layout_height = "42dip"
+                    android:focusable = "true"
+                    />
+4. dimension：尺寸值。
+    （1）属性定义：
+            <declare-styleable name = "名称">
+                   <attr name = "layout_width" format = "dimension" />
+            </declare-styleable>
+    （2）属性使用：
+            <Button
+                    android:layout_width = "42dip"
+                    android:layout_height = "42dip"
+                    />
+5. float：浮点值。
+    （1）属性定义：
+            <declare-styleable name = "AlphaAnimation">
+                   <attr name = "fromAlpha" format = "float" />
+                   <attr name = "toAlpha" format = "float" />
+            </declare-styleable>
+    （2）属性使用：
+            <alpha
+                   android:fromAlpha = "1.0"
+                   android:toAlpha = "0.7"
+                   />
+6. integer：整型值。
+    （1）属性定义：
+            <declare-styleable name = "AnimatedRotateDrawable">
+                   <attr name = "visible" />
+                   <attr name = "frameDuration" format="integer" />
+                   <attr name = "framesCount" format="integer" />
+                   <attr name = "pivotX" />
+                   <attr name = "pivotY" />
+                   <attr name = "drawable" />
+            </declare-styleable>
+    （2）属性使用：
+            <animated-rotate
+                   xmlns:android = "http://schemas.android.com/apk/res/android" 
+                   android:drawable = "@drawable/图片ID" 
+                   android:pivotX = "50%" 
+                   android:pivotY = "50%" 
+                   android:framesCount = "12" 
+                   android:frameDuration = "100"
+                   />
+7. string：字符串。
+    （1）属性定义：
+            <declare-styleable name = "MapView">
+                   <attr name = "apiKey" format = "string" />
+            </declare-styleable>
+    （2）属性使用：
+            <com.google.android.maps.MapView
+                    android:layout_width = "fill_parent"
+                    android:layout_height = "fill_parent"
+                    android:apiKey = "0jOkQ80oD1JL9C6HAja99uGXCRiS2CGjKO_bc_g"
+                    />
+8. fraction：百分数。
+    （1）属性定义：
+            <declare-styleable name="RotateDrawable">
+                   <attr name = "visible" />
+                   <attr name = "fromDegrees" format = "float" />
+                   <attr name = "toDegrees" format = "float" />
+                   <attr name = "pivotX" format = "fraction" />
+                   <attr name = "pivotY" format = "fraction" />
+                   <attr name = "drawable" />
+            </declare-styleable>
+    （2）属性使用：
+            <rotate  xmlns:android = "http://schemas.android.com/apk/res/android"
+　　             android:interpolator = "@anim/动画ID"
+                 android:fromDegrees = "0"
+　　             android:toDegrees = "360"
+                 android:pivotX = "200%"
+                 android:pivotY = "300%"
+　　             android:duration = "5000"
+                 android:repeatMode = "restart"
+                 android:repeatCount = "infinite"
+                   />
+9. enum：枚举值。
+    （1）属性定义：
+            <declare-styleable name="名称">
+                   <attr name="orientation">
+                          <enum name="horizontal" value="0" />
+                          <enum name="vertical" value="1" />
+                   </attr>           
+            </declare-styleable>
+    （2）属性使用：
+            <LinearLayout
+                    xmlns:android = "http://schemas.android.com/apk/res/android"
+                    android:orientation = "vertical"
+                    android:layout_width = "fill_parent"
+                    android:layout_height = "fill_parent"
+                    >
+            </LinearLayout>
+10. flag：位或运算。
+     （1）属性定义：
+             <declare-styleable name="名称">
+                    <attr name="windowSoftInputMode">
+                            <flag name = "stateUnspecified" value = "0" />
+                            <flag name = "stateUnchanged" value = "1" />
+                            <flag name = "stateHidden" value = "2" />
+                            <flag name = "stateAlwaysHidden" value = "3" />
+                            <flag name = "stateVisible" value = "4" />
+                            <flag name = "stateAlwaysVisible" value = "5" />
+                            <flag name = "adjustUnspecified" value = "0x00" />
+                            <flag name = "adjustResize" value = "0x10" />
+                            <flag name = "adjustPan" value = "0x20" />
+                            <flag name = "adjustNothing" value = "0x30" />
+                     </attr>        
+             </declare-styleable>
+     （2）属性使用：
+            <activity
+                   android:name = ".StyleAndThemeActivity"
+                   android:label = "@string/app_name"
+                   android:windowSoftInputMode = "stateUnspecified | stateUnchanged　|　stateHidden">
+                   <intent-filter>
+                          <action android:name = "android.intent.action.MAIN" />
+                          <category android:name = "android.intent.category.LAUNCHER" />
+                   </intent-filter>
+             </activity>
+     注意：
+     属性定义时可以指定多种类型值。
+    （1）属性定义：
+            <declare-styleable name = "名称">
+                   <attr name = "background" format = "reference|color" />
+            </declare-styleable>
+    （2）属性使用：
+             <ImageView
+                     android:layout_width = "42dip"
+                     android:layout_height = "42dip"
+                     android:background = "@drawable/图片ID|#00FF00"
+                     />

@@ -1,0 +1,73 @@
+
+android studio生成aar包并在其他工程引用aar包
+http://blog.csdn.net/getchance/article/details/47257389
+
+
+合并变基 分支 标记 代码统计
+
+android studio主题
+http://color-themes.com/?view=index
+
+
+
+沉浸式 状态栏
+http://www.jianshu.com/p/34a8b40b9308
+
+Android Data Binding（数据绑定）用户指南
+http://blog.csdn.net/guyuealian/article/details/51953749
+(
+MainActivity 中没有使用findViewById去指定需要初始化的控件，也没有使用setText()指定显示的内容。下面详细说明一下：
+     1）使用DataBinding新框架必须导入包：import android.databinding.DataBindingUtil;
+     2）以前在onCreate方法中通过setContentView设置布局；现在使用DataBindingUtil类的一个静态方法setContentView设置布局文件，但该方法会返回一个ActivityMainBinding对象。注意ActivityMainBinding对象会根据你的XML布局文件自动生成，其命名规则是这样的：先将XML布局文件的首字母大写；然后去掉下划线，将下划线后面的第一字母大写；再加Binding组合而成。如布局文件是activity_main，则对应的类名为：ActivityMainBinding
+     3）ActivityMainBinding由编译器根据布局文件的名字自动生成，因此在使用ActivityMainBinding时需要导入该包，一般形式是：当前包名+databinding+ActivityMainBinding
+
+)
+
+view 动画
+
+二维码
+
+RSA
+
+网络请求
+
+推送
+
+android 6.0以上需要动态申请权限（得到设备唯一码等权限）
+http://www.jcodecraeer.com/a/anzhuokaifa/androidkaifa/2015/1110/3670.html
+
+http://www.cnblogs.com/dubo-/p/6018262.html
+
+http://www.jianshu.com/p/b4a8b3d4f587
+
+
+数据库
+
+maven
+
+gradle
+
+jni与c层进行通信,
+http://m.blog.csdn.net/article/details?id=51476144
+
+http://blog.csdn.net/yanbober/article/details/45309049/
+
+
+第三方登录 分享等社会化组件
+
+代码混淆，防止反编译等技术
+
+icon 启动图，项目一般配置，打包上架各个应用市场等
+
+
+
+／／／／／／／／／／／／／／／
+
+python 定时更新数据库 备份，主从复制等
+
+
+record activity  状态栏调整
+view动画调整
+登录界面如何实现 登录和注册多个view切换
+me
+

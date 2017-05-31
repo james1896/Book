@@ -1,0 +1,152 @@
+IOS开发中制作属于自己的静态库.a、资源库.bundle、.framework
+2016-07-27 16:23 1856人阅读 评论(0) 收藏 举报
+
+ 分类：
+静态库
+版权声明：本文为博主原创文章，未经博主允许不得转载。
+
+一、什么是库
+
+       库实际上是一种代码共享的方式，主要用于代码重用和源码隐藏，通常分为动态库和静态库。
+       静态库：链接时完整的拷贝至可执行文件中，被多次使用就有多份冗余拷贝。
+       动态库：链接时不复制，程序运行时由系统动态加载到内存，供程序调用，系统只加载一次，多个程序共用，节省内存空间。
+
+二、什么是.a、.bundle、.framework
+
+       在iOS中静态库以.a和.framework的形式存在，动态库以.dylib和.framework的形式存在。
+       之所以.framework既可能是动态库又可能是静态库，是因为苹果公司禁止用户级App使用动态库，而自己却又堂而皇之的使用动态库，这就造成了iOS中系统级的.framework是动态库，用户级的.framework是静态库。
+        二者区别不大，.a是纯二进制文件，.a文件不能单独使用，至少要有.h文件配合，而.framework除了二进制文件外，还包含一些资源文件（头文件，plist等），由于自身包含了头文件，所以.framework可以单独使用。
+          .a和.framework两种静态库，通常都是把需要用的到图片或者xib文件存放在一个bundle文件中，而该bundle文件的名字和.a或.framework的名字相同。关于bundle文件的制作方法，后面有专门介绍。
+
+
+三、静态库使用的必要性
+
+   1>.  代码的共享与重用
+    2>.  程序模块化
+    3>.  分享给别人代码库时代码隐藏
+    4>.  开发第三方SDK
+
+
+四、.a静态库文件
+
+1、点击创建Project
+
+2、在.m和.h中进行代码编写
+3、根据armv7和arm64打包两个.a进行合并
+合并两个.a文件
+lips -create /Users/tiansha/Desktop/libTestLibrary.a /Users/tiansha/Desktop/Demo/Shengshihuihai/ShengShiHuiHai/Resource/libTestLibrary.a -output /Users/tiansha/Desktop/libTestLibrary2.a
+模拟器包和真机包也可以用该方法进行合并。
+
+4、合并后导入到项目中，并把.h文件与.a 文件一起导入到项目中
+
+
+5、编译项目，导融TestLibrary 即可调用.a中的方法
+
+
+总结：.a文件需要模拟器和真机文件进行合并后项目中才都可以使用，避免切换造成的开发成本高的问题。
+
+五、资源库.bundle
+
+1、bundle资源库的特点
+Bundle是静态的，也就是说，我们包含到包中的资源文件作为一个资源包是不参加项目编译的。也就意味着，bundle包中不能包含可执行的文件。它仅仅是作为资源，被解析成为特定的2进制数据。
+2、新建.bundle
+
+3、加入你需要编译在bundle中的资源文件。
+当然，默认的配置也是可以的，如果你需要特定的优化或者特定的路径配置，你可以进行下面第4步的配置。
+4、进行可选设置
+资源包只需要编译不需要安装
+
+
+
+
+5、编译即可生成.bundle文件，导入项目中
+
+
+6、调用方式
+
+    UIImageView *image = [[UIImageViewalloc]initWithFrame:CGRectMake(0,0,320,480)];
+    image.backgroundColor = [UIColorredColor];
+    image.image = [UIImageimageNamed:@"TestBundle.bundle/Contents/Resources/1.png"];
+    [self.viewaddSubview:image];
+
+五、.framework
+
+1、创建
+
+
+2、Build Phases -> Headers,可以看出有三个选项,分别是Public,Private,Project;把需要暴露给别人的.h文件拖到Public中,剩下的不要暴露的,即为隐藏的文件,放在Project中
+
+
+
+3、把所有需要暴露的.h文件都用#import<TestFramework/TestLibrary.h>引入,记住一定要将所有的需要暴露的.h文件都写在给定的.h文件中,不然编译后生成的.framework在引用的时候会有警告。
+
+
+
+4、新建一个Target,选择Other - >Aggregate
+
+
+
+5、选中新建的Target,点击Build Pharas ,选中左上角的+,New Run Script Phase，添加脚本
+
+
+
+脚本用于合并Framework，真机和模拟器版本，以及armv7 armv7s arm64等不同architectures
+# Sets the target folders and the final framework product.
+# 如果工程名称和Framework的Target名称不一样的话，要自定义FMKNAME
+# 例如: FMK_NAME = "MyFramework"
+FMK_NAME=${PROJECT_NAME}
+
+# Install dir will be the final output to the framework.
+# The following line create it in the root folder of the current project.
+INSTALL_DIR=${SRCROOT}/Products/${FMK_NAME}.framework
+
+# Working dir will be deleted after the framework creation.
+WRK_DIR=build
+DEVICE_DIR=${WRK_DIR}/Release-iphoneos/${FMK_NAME}.framework
+SIMULATOR_DIR=${WRK_DIR}/Release-iphonesimulator/${FMK_NAME}.framework
+
+# -configuration ${CONFIGURATION}
+# Clean and Building both architectures.
+xcodebuild -configuration "Release" -target"${FMK_NAME}" -sdk iphoneos clean build
+xcodebuild -configuration "Release" -target"${FMK_NAME}" -sdk iphonesimulator clean build
+
+# Cleaning the oldest.
+if [ -d "${INSTALL_DIR}" ]
+then
+rm -rf "${INSTALL_DIR}"
+fi
+
+mkdir -p "${INSTALL_DIR}"
+
+cp -R "${DEVICE_DIR}/""${INSTALL_DIR}/"
+
+# Uses the Lipo Tool to merge both binary files (i386 + armv6/armv7) into one Universal final product.
+lipo -create "${DEVICE_DIR}/${FMK_NAME}""${SIMULATOR_DIR}/${FMK_NAME}" -output"${INSTALL_DIR}/${FMK_NAME}"
+
+rm -r "${WRK_DIR}"
+
+open "${SRCROOT}/Products/"
+
+6、选中Targets中的第一个Target,点击Build Setting -> Mach-O Type,选择Static Library,到这里会有一个问题存在,就是无法在iPhone5c上使用.framework,这是我们需要在Build Setting -> Architectures ->Architectures中添加armv7s
+
+
+
+
+7、选中Aggregate，进行编译，编译成功后自动打开product文件夹
+
+
+
+8、打开终端，可以查看支持的架构
+
+lipo -info /Users/tiansha/Desktop/Demo/TestFramework/Products/TestFramework.framework/TestFramework
+
+
+
+9、导入项目中即可使用
+
+
+注意：运行的xcode版本是7.3
+
+
+重点  注意!!!!!!!!
+

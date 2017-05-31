@@ -1,0 +1,17 @@
+
+懒人福利：用脚本来修改Xcode工程
+http://blog.wtlucky.com/blog/2016/10/10/use-script-to-modify-xcode-project/
+
+聊聊 Xcode 项目文件中的 project.pbxproj
+http://ios.jobbole.com/89540/
+
+使用代码为 Xcode 工程添加文件
+
+http://draveness.me/bei-xcodeproj-keng-de-zhe-ji-tian.html
+
+
+
+
+
+问题解决：安装完ruby却提示[/usr/bin/ruby: No such file or directory]
+http://blog.csdn.net/ckw1988/article/details/51535114

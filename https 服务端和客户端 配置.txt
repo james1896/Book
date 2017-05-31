@@ -1,0 +1,10 @@
+https 服务端和客户端 配置
+http://www.cnblogs.com/liyulong1982/p/6106129.html
+
+
+iOS 迁移到HTTPS（自建证书+单向验证+AF3.0+WKWebView+SDWebImage）
+http://blog.csdn.net/zhaojinqiang12/article/details/53695615
+
+
+python Flask 使用https 安全协议
+http://blog.csdn.net/shenzhan168/article/details/47783651

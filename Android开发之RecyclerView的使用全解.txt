@@ -1,0 +1,729 @@
+Android开发之RecyclerView的使用全解
+2016-03-08 14:50 54803人阅读 评论(11) 收藏 举报
+
+http://blog.csdn.NET/dmk877/article/details/50816933
+
+自Android 5.0之后，谷歌公司推出了RecylerView控件，RecylerView,我想看到一个新名词后大部分人会首先发出一个疑问，recylerview是什么？为什么会有recylerview也就是说recylerview的优点是什么？recylerview怎么用？接下来就对这几个问题来一起讨论一下recylerview，如有谬误欢迎批评指正，如有疑问请留言。
+
+通过本篇博客，你将学到以下知识点
+①RecyclerView与ListView相比它的优点
+②RecyclerView的初步用法
+③RecyclerView增加分隔线
+④RecyclerView更改分隔线的样式
+⑤RecyclerView的Adapter的用法
+⑥RecyclerView.Adapter中刷新的几个方法的对比
+⑦给RecyclerView增加条目点击事件
+
+
+1.RecyclerView是什么？
+      RecylerView是support-v7包中的新组件，是一个强大的滑动组件，与经典的ListView相比，同样拥有item回收复用的功能，这一点从它的名字recylerview即回收view也可以看出。看到这也许有人会问，不是已经有ListView了吗，为什么还要RecylerView呢？这就牵扯到第二个问题了。
+
+2.RecyclerView的优点是什么？
+     根据官方的介绍RecylerView是ListView的升级版，既然如此那RecylerView必然有它的优点，现就RecylerView相对于ListView的优点罗列如下：
+①RecylerView封装了viewholder的回收复用，也就是说RecylerView标准化了ViewHolder，编写Adapter面向的是ViewHolder而不再是View了，复用的   逻辑被封装了，写起来更加简单。
+②提供了一种插拔式的体验，高度的解耦，异常的灵活，针对一个Item的显示RecylerView专门抽取出了相应的类，来控制Item的显示，使其的扩展性非常强。例如：你想控制横向或者纵向滑动列表效果可以通过LinearLayoutManager这个类来进行控制(与GridView效果对应的是GridLayoutManager,与瀑布流对应的还有StaggeredGridLayoutManager等)，也就是说RecylerView不再拘泥于ListView的线性展示方式，它也可以实现GridView的效果等多种效果。你想控制Item的分隔线，可以通过继承RecylerView的ItemDecoration这个类，然后针对自己的业务需求去抒写代码。
+③可以控制Item增删的动画，可以通过ItemAnimator这个类进行控制，当然针对增删的动画，RecylerView有其自己默认的实现。
+3.RecyclerView的用法
+ 3.1 RecyclerView的初步用法(包括RecyclerView.Adapter用法)
+     说了这么多，可能大家最关心的就是RecylerView应该怎么用，我们先来讨论讨论RecylerView的用法的理论知识，然后结合一个实例来体验一下RecylerView的优势首先我们需要明白的一点是使用RecylerView必须导入support-v7包，在上面我提到过RecylerView高度的解耦，异常的灵活谷歌给我们提供了多个类来控制Item的显示。
+[java] view plain copy
+
+
+ 
+
+
+1. recyclerView = (RecyclerView) findViewById(R.id.recyclerView);  
+2. LinearLayoutManager layoutManager = new LinearLayoutManager(this );  
+3. //设置布局管理器  
+4. recyclerView.setLayoutManager(layoutManager);  
+5. //设置为垂直布局，这也是默认的  
+6. layoutManager.setOrientation(OrientationHelper. VERTICAL);  
+7. //设置Adapter  
+8. recyclerView.setAdapter( recycleAdapter);  
+9.  //设置分隔线  
+10. recyclerView.addItemDecoration( new DividerGridItemDecoration(this ));  
+11. //设置增加或删除条目的动画  
+12. recyclerView.setItemAnimator( new DefaultItemAnimator());  
+可以看到对RecylerView的设置过程，比ListView要复杂一些，这也是RecylerView高度解耦的表现，虽然代码抒写上有点复杂，但它的扩展性是极高的。
+在了解了RecyclerView的一些控制之后，紧接着来看看它的Adapter的写法，RecyclerView的Adapter与ListView的Adapter还是有点区别的，RecyclerView.Adapter，需要实现3个方法：
+①onCreateViewHolder()
+    这个方法主要生成为每个Item inflater出一个View，但是该方法返回的是一个ViewHolder。该方法把View直接封装在ViewHolder中，然后我们面向的是ViewHolder这个实例，当然这个ViewHolder需要我们自己去编写。直接省去了当初的convertView.setTag(holder)和convertView.getTag()这些繁琐的步骤。
+②onBindViewHolder()
+     这个方法主要用于适配渲染数据到View中。方法提供给你了一个viewHolder，而不是原来的convertView。
+③getItemCount()
+      这个方法就类似于BaseAdapter的getCount方法了，即总共有多少个条目。
+实例：接着来几个小的实例帮助大家更深入的了解RecyclerView的用法，首先来实现一个最简单的列表，效果如下
+
+这种效果的MainAcitivity的代码如下
+[java] view plain copy
+
+
+ 
+
+
+1. package com.example.reclerviewpractice;  
+2.   
+3. import java.util.ArrayList;  
+4. import java.util.List;  
+5.   
+6. import com.example.reclerviewpractice.adapter.MyRecyclerAdapter;  
+7.   
+8. import android.annotation.SuppressLint;  
+9. import android.os.Bundle;  
+10. import android.support.v7.app.ActionBarActivity;  
+11. import android.support.v7.widget.DefaultItemAnimator;  
+12. import android.support.v7.widget.LinearLayoutManager;  
+13. import android.support.v7.widget.OrientationHelper;  
+14. import android.support.v7.widget.RecyclerView;  
+15.   
+16. public class MainActivity extends ActionBarActivity {  
+17.   
+18.      private RecyclerView recyclerView;  
+19.      private List<String> mDatas;  
+20.      private MyRecyclerAdapter recycleAdapter;  
+21.        
+22.      @SuppressLint("NewApi") @Override  
+23.      protected void onCreate(Bundle savedInstanceState) {  
+24.             super.onCreate(savedInstanceState);  
+25.            setContentView(R.layout. activity_main);  
+26.   
+27.             recyclerView = (RecyclerView) findViewById(R.id.recyclerView );  
+28.              
+29.            initData();  
+30.             recycleAdapter= new MyRecyclerAdapter(MainActivity.this , mDatas );  
+31.            LinearLayoutManager layoutManager = new LinearLayoutManager(this);  
+32.             //设置布局管理器  
+33.             recyclerView.setLayoutManager(layoutManager);  
+34.             //设置为垂直布局，这也是默认的  
+35.            layoutManager.setOrientation(OrientationHelper.VERTICAL);  
+36.             //设置Adapter  
+37.             recyclerView.setAdapter( recycleAdapter);  
+38.             //设置增加或删除条目的动画  
+39.             recyclerView.setItemAnimator(new DefaultItemAnimator());  
+40.              
+41.      }  
+42.   
+43.      private void initData() {  
+44.             mDatas = new ArrayList<String>();  
+45.             for ( int i=0; i < 40; i++) {  
+46.                  mDatas.add( "item"+i);  
+47.            }  
+48.      }  
+49. }  
+RecyclerView的Adapter的代码如下:
+[java] view plain copy
+
+
+ 
+
+
+1. package com.example.reclerviewpractice.adapter;  
+2.   
+3. import java.util.List;  
+4.   
+5. import com.example.reclerviewpractice.R;  
+6.   
+7. import android.content.Context;  
+8. import android.support.v7.widget.RecyclerView;  
+9. import android.support.v7.widget.RecyclerView.ViewHolder;  
+10. import android.view.LayoutInflater;  
+11. import android.view.View;  
+12. import android.view.ViewGroup;  
+13. import android.widget.TextView;  
+14.   
+15. public class MyRecyclerAdapter extends RecyclerView.Adapter<MyRecyclerAdapter.MyViewHolder> {  
+16.        
+17.      private List<String> mDatas;  
+18.      private Context mContext;  
+19.      private LayoutInflater inflater;  
+20.        
+21.      public MyRecyclerAdapter(Context context, List<String> datas){  
+22.             this. mContext=context;  
+23.             this. mDatas=datas;  
+24.             inflater=LayoutInflater. from(mContext);  
+25.      }  
+26.        
+27.      @Override  
+28.      public int getItemCount() {  
+29.              
+30.             return mDatas.size();  
+31.      }  
+32.   
+33.      //填充onCreateViewHolder方法返回的holder中的控件  
+34.      @Override  
+35.      public void onBindViewHolder(MyViewHolder holder, final int position) {  
+36.              
+37.            holder.tv.setText( mDatas.get(position));  
+38.      }  
+39.   
+40.      //重写onCreateViewHolder方法，返回一个自定义的ViewHolder  
+41.      @Override  
+42.      public MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {  
+43.              
+44.            View view = inflater.inflate(R.layout. item_home,parent, false);  
+45.            MyViewHolder holder= new MyViewHolder(view);  
+46.             return holder;  
+47.      }  
+48.        
+49.      class MyViewHolder extends ViewHolder{  
+50.              
+51.            TextView tv;  
+52.   
+53.             public MyViewHolder(View view) {  
+54.                  super(view);  
+55.                  tv=(TextView) view.findViewById(R.id. tv_item);  
+56.            }  
+57.              
+58.      }  
+59. }  
+
+可以看到RecyclerView标准化了ViewHolder，编写 Adapter面向的是ViewHoder而不在是View了，复用的逻辑被封装了，写起来更加简单。其实它的写法与BaseAdapter的写法是差不多的，大家可以对比下它与getView方法写法的区别，在onCreateViewHolder方法中初始化了一个View，然后返回一个ViewHolder，这个返回的ViewHolder类似于之前在getView中的convertView.getTag()，然后在onBindViewHolder方法中去给这个ViewHolder中的控件填充值。其实它的原理跟getView是差不多的，只是做了封装，我们写起来比较简洁。到这里，看到上述运行效果可能有很多人会说，这效果太丑了，连个分隔线都没有，不要急，我们一步一步来。
+  3.2 RecyclerView增加分隔线
+      前面我们说到可以通过RecyclerView.addItemDecoration(ItemDecoration decoration)这个方法进行设置，其中它需要的参数就是我们自己定义的继承自ItemDecoration的一个对象。我们可以创建一个继承RecyclerView.ItemDecoration类来绘制分隔线，通过ItemDecoration可以让我们每一个Item从视觉上面相互分开来，例如ListView的divider非常相似的效果。当然像我们上面的例子ItemDecoration我们没有设置也没有报错，那说明ItemDecoration我们并不是强制需要使用，作为我们开发者可以设置或者不设置Decoration的。实现一个ItemDecoration，系统提供的ItemDecoration是一个抽象类，内部除去已经废弃的方法以外，我们主要实现以下三个方法:
+
+[java] view plain copy
+
+
+ 
+
+
+1. public static abstract class ItemDecoration {   
+2.         public void onDraw(Canvas c,RecyclerView parent,State state) {   
+3.           onDraw(c,parent);   
+4.       }   
+5.       public void onDrawOver(Canvas c,RecyclerView parent,State state) {   
+6.           onDrawOver(c,parent);   
+7.       }   
+8.       public void getItemOffsets(RectoutRect, View view,RecyclerView parent,State state) {   
+9.           getItemOffsets(outRect,((LayoutParams)view.getLayoutParams()).getViewLayoutPosition(),parent);   
+10.       }   
+11.   }  
+又因为当我们RecyclerView在进行绘制的时候会进行绘制Decoration,那么会去调用onDraw和onDrawOver方法，那么这边我们其实只要去重写onDraw和getItemOffsets这两个方法就可以实现啦。然后LayoutManager会进行Item布局的时候，会去调用getItemOffset方法来计算每个Item的Decoration合适的尺寸，下面我们来具体实现一个Decoration，DividerItemDecoration.Java
+[java] view plain copy
+
+
+ 
+
+
+1. package com.example.reclerviewpractice;  
+2.   
+3. import android.content.Context;  
+4. import android.content.res.TypedArray;  
+5. import android.graphics.Canvas;  
+6. import android.graphics.Rect;  
+7. import android.graphics.drawable.Drawable;  
+8. import android.support.v7.widget.LinearLayoutManager ;  
+9. import android.support.v7.widget.RecyclerView;  
+10. import android.view.View;  
+11.   
+12. public class DividerItemDecoration extends RecyclerView.ItemDecoration {  
+13.   
+14.     private static final int[] ATTRS = new int[]{  
+15.             android.R.attr. listDivider  
+16.     };  
+17.   
+18.     public static final int HORIZONTAL_LIST = LinearLayoutManager.HORIZONTAL;  
+19.   
+20.     public static final int VERTICAL_LIST = LinearLayoutManager.VERTICAL;  
+21.   
+22.     private Drawable mDivider;  
+23.   
+24.     private int mOrientation;  
+25.   
+26.     public DividerItemDecoration(Context context, int orientation) {  
+27.         final TypedArray a = context.obtainStyledAttributes(ATTRS );  
+28.         mDivider = a.getDrawable(0);  
+29.         a.recycle();  
+30.         setOrientation(orientation);  
+31.     }  
+32.   
+33.     public void setOrientation( int orientation) {  
+34.         if (orientation != HORIZONTAL_LIST && orientation != VERTICAL_LIST) {  
+35.             throw new IllegalArgumentException( "invalid orientation");  
+36.         }  
+37.         mOrientation = orientation;  
+38.     }  
+39.   
+40.     @Override  
+41.     public void onDraw(Canvas c, RecyclerView parent) {  
+42.         if (mOrientation == VERTICAL_LIST) {  
+43.             drawVertical(c, parent);  
+44.         } else {  
+45.             drawHorizontal(c, parent);  
+46.         }  
+47.     }  
+48.   
+49.     public void drawVertical(Canvas c, RecyclerView parent) {  
+50.         final int left = parent.getPaddingLeft();  
+51.         final int right = parent.getWidth() - parent.getPaddingRight();  
+52.   
+53.         final int childCount = parent.getChildCount();  
+54.         for (int i = 0; i < childCount; i++) {  
+55.             final View child = parent.getChildAt(i);  
+56.             final RecyclerView.LayoutParams params = (RecyclerView.LayoutParams) child  
+57.                     .getLayoutParams();  
+58.             final int top = child.getBottom() + params.bottomMargin;  
+59.             final int bottom = top + mDivider.getIntrinsicHeight();  
+60.             mDivider.setBounds(left, top, right, bottom);  
+61.             mDivider.draw(c);  
+62.         }  
+63.     }  
+64.   
+65.     public void drawHorizontal(Canvas c, RecyclerView parent) {  
+66.         final int top = parent.getPaddingTop();  
+67.         final int bottom = parent.getHeight() - parent.getPaddingBottom();  
+68.   
+69.         final int childCount = parent.getChildCount();  
+70.         for (int i = 0; i < childCount; i++) {  
+71.             final View child = parent.getChildAt(i);  
+72.             final RecyclerView.LayoutParams params = (RecyclerView.LayoutParams) child  
+73.                     .getLayoutParams();  
+74.             final int left = child.getRight() + params.rightMargin;  
+75.             final int right = left + mDivider.getIntrinsicHeight();  
+76.             mDivider.setBounds(left, top, right, bottom);  
+77.             mDivider.draw(c);  
+78.         }  
+79.     }  
+80.   
+81.     @Override  
+82.     public void getItemOffsets(Rect outRect, int itemPosition, RecyclerView parent) {  
+83.         if (mOrientation == VERTICAL_LIST) {  
+84.             outRect.set(0, 0, 0, mDivider.getIntrinsicHeight());  
+85.         }else{  
+86.             outRect.set(0, 0, mDivider.getIntrinsicWidth(), 0);  
+87.         }  
+88.     }  
+89. }  
+
+在这里我们采用系统主题(android.R.attr.listDivider)来设置成分隔线的，然后来获取尺寸,位置进行setBound(),绘制，接着通过outRect.set()来设置绘制整个区域范围，当然了它是有两种情况的一种LinearLayoutManager.HORIZONTAL另外一种LinearLayoutManager.VERTICAL需要分别对其进行处理，最后不要忘记往RecyclerView中设置该自定义的分割线,然后在MainActivity中加上一句recyclerView .addItemDecoration(new DividerItemDecoration(MainActivity.this,LinearLayoutManager.VERTICAL))即给RecyclerView增加分隔线。然后运行，效果如下：
+
+
+可以看到已经有了分隔线，跟ListView的效果基本一致了。当然了，既然谷歌给我们提供了这个专门添加分隔线的方法，那它肯定会允许我们自定义分隔线的样式，不然把这个方法抽取出来也没有任何意义。
+
+  3.3 改变分隔线样式
+
+     那么怎么更改分隔线的样式呢？在上面的DividerItemDecoration这个类中可以看到这个分隔线是跟ListView一样的，即系统的默认的样式，因此我们可以在styles的xml文件中进行更改，更改如下：
+[java] view plain copy
+
+
+ 
+
+
+1. <!-- Application theme. -->  
+2.     <style name ="AppTheme" parent="AppBaseTheme">  
+3.         <!-- All customizations that are NOT specific to a particular API-level can go here. -->  
+4.         <item name= "android:listDivider">@drawable/divider </item >   
+5.     </style >  
+divider的内容如下：
+[java] view plain copy
+
+
+ 
+
+
+1. <?xml version="1.0" encoding= "utf-8"?>  
+2. <shape xmlns:android="http://schemas.android.com/apk/res/android"  
+3.     android:shape="rectangle" >  
+4.      
+5.         <!-- 填充的颜色 -->  
+6.        <solid android:color ="@color/color_red"/>  
+7.        
+8.       <!--  线条大小 -->  
+9.       <size android:height ="1dp" android:width ="1dp"/>  
+10. </shape>  
+修改之后运行效果如下：
+
+
+可以看到分隔线的颜色变了，当然了这只是一个小例子，我们可以按照业务需求去更改，这样就基本实现了ListView的效果，看到这肯定会有人说，这尼玛，好麻烦，还不如ListView简单呢，从上面的代码量看来确实是使用起来很复杂，但是如果此时你想将这个列表以GridView的形式展示出来，用RecylerView仅仅是换一行代码的事情，
+在上面的代码中我们使用了
+
+[java] view plain copy
+
+
+ 
+
+
+1. LinearLayoutManager layoutManager = new LinearLayoutManager(this);  
+2.  //设置布局管理器  
+3. recyclerView.setLayoutManager(layoutManager);  
+
+RecyclerView.LayoutManager是一个抽象类，系统为我们提供了三个实现类
+①LinearLayoutManager即线性布局，这个是在上面的例子中我们用到的布局
+②GridLayoutManager即表格布局
+③StaggeredGridLayoutManager即流式布局，如瀑布流效果假如将上述例子换成GridView的效果，那么相应的代码应该这样改
+
+[java] view plain copy
+
+
+ 
+
+
+1. recyclerView .setLayoutManager(new GridLayoutManager( this,4));  
+除此之外上述的分隔线也要做相应的更改，因为在上述DividerItemDecoration这个方法中从
+[java] view plain copy
+
+
+ 
+
+
+1. final int left = parent.getPaddingLeft();  
+2. final int right = parent.getWidth() - parent.getPaddingRight();  
+这两行我们可以看出来，它是绘制了一条线这条线就是从RecyclerView去掉左右边距后，剩余的部分，因为当显示成ListView时每一行就一个Item所以整体效果看上去就跟ListView差不多，而当展示成GridView那样的效果时，每一行就不止一个条目了，而有可能是多个,所以这个类就不再适用了，我们需要重新写一个，这里我就直接用鸿洋大神写的了，它的博客地址：http://blog.csdn.net/lmj623565791/article/details/45059587
+[java] view plain copy
+
+
+ 
+
+
+1. package com.example.reclerviewpractice;  
+2.   
+3. import android.content.Context;  
+4. import android.content.res.TypedArray;  
+5. import android.graphics.Canvas;  
+6. import android.graphics.Rect;  
+7. import android.graphics.drawable.Drawable;  
+8. import android.support.v7.widget.GridLayoutManager;  
+9. import android.support.v7.widget.RecyclerView;  
+10. import android.support.v7.widget.RecyclerView.LayoutManager;  
+11. import android.support.v7.widget.RecyclerView.State;  
+12. import android.support.v7.widget.StaggeredGridLayoutManager;  
+13. import android.view.View;  
+14.   
+15. /** 
+16.  * 
+17.  * @author zhy 
+18.  * 
+19.  */  
+20. public class DividerGridItemDecoration extends RecyclerView.ItemDecoration  
+21. {  
+22.   
+23.      private static final int[] ATTRS = new int[] { android.R.attr.listDivider };  
+24.      private Drawable mDivider;  
+25.   
+26.      public DividerGridItemDecoration(Context context)  
+27.      {  
+28.             final TypedArray a = context.obtainStyledAttributes(ATTRS );  
+29.             mDivider = a.getDrawable(0);  
+30.            a.recycle();  
+31.      }  
+32.   
+33.      @Override  
+34.      public void onDraw(Canvas c, RecyclerView parent, State state)  
+35.      {  
+36.   
+37.            drawHorizontal(c, parent);  
+38.            drawVertical(c, parent);  
+39.   
+40.      }  
+41.   
+42.      private int getSpanCount(RecyclerView parent)  
+43.      {  
+44.             // 列数  
+45.             int spanCount = -1;  
+46.            LayoutManager layoutManager = parent.getLayoutManager();  
+47.             if (layoutManager instanceof GridLayoutManager)  
+48.            {  
+49.   
+50.                 spanCount = ((GridLayoutManager) layoutManager).getSpanCount();  
+51.            } else if (layoutManager instanceof StaggeredGridLayoutManager)  
+52.            {  
+53.                 spanCount = ((StaggeredGridLayoutManager) layoutManager)  
+54.                            .getSpanCount();  
+55.            }  
+56.             return spanCount;  
+57.      }  
+58.   
+59.      public void drawHorizontal(Canvas c, RecyclerView parent)  
+60.      {  
+61.             int childCount = parent.getChildCount();  
+62.             for ( int i = 0; i < childCount; i++)  
+63.            {  
+64.                  final View child = parent.getChildAt(i);  
+65.                  final RecyclerView.LayoutParams params = (RecyclerView.LayoutParams) child  
+66.                            .getLayoutParams();  
+67.                  final int left = child.getLeft() - params.leftMargin;  
+68.                  final int right = child.getRight() + params.rightMargin  
+69.                            + mDivider.getIntrinsicWidth();  
+70.                  final int top = child.getBottom() + params.bottomMargin;  
+71.                  final int bottom = top + mDivider.getIntrinsicHeight();  
+72.                  mDivider.setBounds(left, top, right, bottom);  
+73.                  mDivider.draw(c);  
+74.            }  
+75.      }  
+76.   
+77.      public void drawVertical(Canvas c, RecyclerView parent)  
+78.      {  
+79.             final int childCount = parent.getChildCount();  
+80.             for ( int i = 0; i < childCount; i++)  
+81.            {  
+82.                  final View child = parent.getChildAt(i);  
+83.   
+84.                  final RecyclerView.LayoutParams params = (RecyclerView.LayoutParams) child  
+85.                            .getLayoutParams();  
+86.                  final int top = child.getTop() - params.topMargin;  
+87.                  final int bottom = child.getBottom() + params.bottomMargin;  
+88.                  final int left = child.getRight() + params.rightMargin;  
+89.                  final int right = left + mDivider.getIntrinsicWidth();  
+90.   
+91.                  mDivider.setBounds(left, top, right, bottom);  
+92.                  mDivider.draw(c);  
+93.            }  
+94.      }  
+95.   
+96.      private boolean isLastColum(RecyclerView parent, int pos, int spanCount,  
+97.                  int childCount)  
+98.      {  
+99.            LayoutManager layoutManager = parent.getLayoutManager();  
+100.             if (layoutManager instanceof GridLayoutManager)  
+101.            {  
+102.                  if ((pos + 1) % spanCount == 0) // 如果是最后一列，则不需要绘制右边  
+103.                 {  
+104.                       return true;  
+105.                 }  
+106.            } else if (layoutManager instanceof StaggeredGridLayoutManager)  
+107.            {  
+108.                  int orientation = ((StaggeredGridLayoutManager) layoutManager)  
+109.                            .getOrientation();  
+110.                  if (orientation == StaggeredGridLayoutManager.VERTICAL )  
+111.                 {  
+112.                       if ((pos + 1) % spanCount == 0) // 如果是最后一列，则不需要绘制右边  
+113.                      {  
+114.                             return true;  
+115.                      }  
+116.                 } else  
+117.                 {  
+118.                      childCount = childCount - childCount % spanCount;  
+119.                       if (pos >= childCount) // 如果是最后一列，则不需要绘制右边  
+120.                             return true;  
+121.                 }  
+122.            }  
+123.             return false;  
+124.      }  
+125.   
+126.      private boolean isLastRaw(RecyclerView parent, int pos, int spanCount,  
+127.                  int childCount)  
+128.      {  
+129.            LayoutManager layoutManager = parent.getLayoutManager();  
+130.             if (layoutManager instanceof GridLayoutManager)  
+131.            {  
+132.                 childCount = childCount - childCount % spanCount;  
+133.                  if (pos >= childCount) // 如果是最后一行，则不需要绘制底部  
+134.                       return true;  
+135.            } else if (layoutManager instanceof StaggeredGridLayoutManager)  
+136.            {  
+137.                  int orientation = ((StaggeredGridLayoutManager) layoutManager)  
+138.                            .getOrientation();  
+139.                  // StaggeredGridLayoutManager 且纵向滚动  
+140.                  if (orientation == StaggeredGridLayoutManager.VERTICAL )  
+141.                 {  
+142.                      childCount = childCount - childCount % spanCount;  
+143.                       // 如果是最后一行，则不需要绘制底部  
+144.                       if (pos >= childCount)  
+145.                             return true;  
+146.                 } else  
+147.                  // StaggeredGridLayoutManager 且横向滚动  
+148.                 {  
+149.                       // 如果是最后一行，则不需要绘制底部  
+150.                       if ((pos + 1) % spanCount == 0)  
+151.                      {  
+152.                             return true;  
+153.                      }  
+154.                 }  
+155.            }  
+156.             return false;  
+157.      }  
+158.   
+159.      @Override  
+160.      public void getItemOffsets(Rect outRect, int itemPosition,  
+161.                 RecyclerView parent)  
+162.      {  
+163.             int spanCount = getSpanCount(parent);  
+164.             int childCount = parent.getAdapter().getItemCount();  
+165.             if (isLastRaw(parent, itemPosition, spanCount, childCount))// 如果是最后一行，则不需要绘制底部  
+166.            {  
+167.                 outRect.set(0, 0, mDivider.getIntrinsicWidth(), 0);  
+168.            } else if (isLastColum(parent, itemPosition, spanCount, childCount))// 如果是最后一列，则不需要绘制右边  
+169.            {  
+170.                 outRect.set(0, 0, 0, mDivider.getIntrinsicHeight());  
+171.            } else  
+172.            {  
+173.                 outRect.set(0, 0, mDivider.getIntrinsicWidth(),  
+174.                             mDivider.getIntrinsicHeight());  
+175.            }  
+176.      }  
+177. }  
+别忘了更改分隔线recyclerView .addItemDecoration(new DividerGridItemDecoration(this ));之后运行发现效果如下
+
+
+可以看到如果你准备好了分隔线的这个类，从ListView效果到GridView效果，只需要几行代码，是不是瞬间感觉高大上了？还有更让人瞠目结舌的效果，将上述代码做如下更改
+[java] view plain copy
+
+
+ 
+
+
+1. StaggeredGridLayoutManager layoutManager = new StaggeredGridLayoutManager(4,StaggeredGridLayoutManager.HORIZONTAL);  
+2. //设置布局管理器  
+3. recyclerView.setLayoutManager(layoutManager);  
+
+这里需要注意的是StaggeredGridLayoutManager构造的第二个参数传一个orientation，如果传入的是StaggeredGridLayoutManager.VERTICAL那么前面那个参数就代表有多少列；如果传是StaggeredGridLayoutManager.HORIZONTAL那么前面那个参数就代表有多少行
+运行效果如下
+
+    这效果是不是有点逆天？可以看到，固定为4行，变成了左右滑动。有一点需要注意，如果是横向的时候，item的宽度需要注意去设置，毕竟横向的宽度没有约束了，因为控件可以横向滚动了，另外它还可以实现瀑布流的效果，关于瀑布流我准备后面专门写一篇博客。
+  3.4 RecyclerView增加和删除的动画(包括RecyclerView.Adapter中刷新的几个方法的对比)
+在上面也提到了控制RecyclerView增加和删除的动画是通过ItemAnimator这个类来实现的，ItemAnimator这类也是个抽象的类，系统默认给我们提供了一种增加和删除的动画，下面我们就来看看这种动画的效果，我们需要做的修改如下：
+
+[java] view plain copy
+
+
+ 
+
+
+1. LinearLayoutManager layoutManager = new LinearLayoutManager(this);  
+2.  //设置布局管理器  
+3. recyclerView.setLayoutManager(layoutManager);  
+4. //设置增加或删除条目的动画  
+5. recyclerView.setItemAnimator( new DefaultItemAnimator());  
+然后重写ActionBar的
+[java] view plain copy
+
+
+ 
+
+
+1. @Override  
+2.      public boolean onCreateOptionsMenu(Menu menu)  
+3.      {  
+4.            getMenuInflater().inflate(R.menu. main, menu);  
+5.             return super.onCreateOptionsMenu(menu);  
+6.      }  
+7.   
+8.      @Override  
+9.      public boolean onOptionsItemSelected(MenuItem item)  
+10.      {  
+11.             switch (item.getItemId())  
+12.            {  
+13.             case R.id. id_action_add:  
+14.                  recycleAdapter.addData(1);  
+15.                  break;  
+16.             case R.id. id_action_delete:  
+17.                  recycleAdapter.removeData(1);  
+18.                  break;  
+19.            }  
+20.             return true;  
+21.      }  
+
+关于R.menu. main中的main.xml这个文件代码就不贴了，在最后的一个汇总的例子里会有
+recyclerViewAdapter中增加的两个方法：
+
+public void addData( int position) {
+          mDatas.add(position, "Insert One");
+          notifyItemInserted(position);
+          notifyItemRangeChanged(position, mDatas.size());
+     }
+
+     public void removeData( int position) {
+          mDatas.remove(position);
+          notifyItemRemoved(position);
+          notifyItemRangeChanged(position, mDatas.size());
+     }
+这里需要说一下RecyclerView.Adapter中刷新数据的几个方法，一共有这么几个方法
+[java] view plain copy
+
+
+ 
+
+
+1. public final void notifyDataSetChanged()  
+2. public final void notifyItemChanged(int position)  
+3. public final void notifyItemRangeChanged(int positionStart, int itemCount)  
+4. public final void notifyItemInserted(int position)   
+5. public final void notifyItemMoved(int fromPosition, int toPosition)  
+6. public final void notifyItemRangeInserted(int positionStart, int itemCount)  
+7. public final void notifyItemRemoved(int position)  
+8. public final void notifyItemRangeRemoved(int positionStart, int itemCount)  
+notifyDataSetChanged()这个方法跟我们平时用到的ListView的Adapter的方法一样，这里就不多做描述了。
+notifyItemChanged(int position)，当position位置的数据发生了改变时就会调用这个方法，就会回调对应position的onBindViewHolder()方法了，当然，因为ViewHolder是复用的，所以如果position在当前屏幕以外，也就不会回调了，因为没有意义，下次position滚动会当前屏幕以内的时候同样会调用onBindViewHolder()方法刷新数据了。其他的方法也是同样的道理。public final void notifyItemRangeChanged(int positionStart, int itemCount)，顾名思义，可以刷新从positionStart开始itemCount数量的item了（这里的刷新指回调onBindViewHolder()方法）。
+public final void notifyItemInserted(int position)，这个方法是在第position位置被插入了一条数据的时候可以使用这个方法刷新，注意这个方法调用后会有插入的动画，这个动画可以使用默认的，也可以自己定义。
+public final void notifyItemMoved(int fromPosition, int toPosition)，这个方法是从fromPosition移动到toPosition为止的时候可以使用这个方法刷新
+public final void notifyItemRangeInserted(int positionStart, int itemCount)，显然是批量添加。
+
+public final void notifyItemRemoved(int position)，第position个被删除的时候刷新，同样会有动画。
+将上述更改运行，点击添加和删除按钮效果图如下：
+public final void notifyItemRangeRemoved(int positionStart, int itemCount)，批量删除。
+
+
+
+可以看到系统给提供的动画效果还不错，当然我们也可以按照业务需求去自己定义动画效果。
+
+  3.5 给RecyclerView的Item添加点击事件
+    到这里还有一点从文章开头到现在我们都没有提及，就是Item的点击事件RecyclerView监听事件处理在ListView使用的时候，该控件给我们提供一个onItemClickListener监听器，这样当我们点击Item的时候，会回调相关的方法，以便我们方便处理Item点击事件。对于RecyclerView来讲，非常可惜的是，该控件没有给我们提供这样的内置监听器方法，不过我们可以进行改造实现，可以这样实现Item的点击事件的监听，在我们的adapter中增加这两个方法
+public interface OnItemClickListener{
+        void onClick( int position);
+        void onLongClick( int position);
+     }
+public void setOnItemClickListener(OnItemClickListener onItemClickListener ){
+        this. mOnItemClickListener=onItemClickListener;
+     }
+然后onBindViewHolder方法要做如下更改
+[java] view plain copy
+
+
+ 
+
+
+1. @Override  
+2.      public void onBindViewHolder(MyViewHolder holder, final int position) {  
+3.              
+4.            holder. tv.setText( mDatas.get(position));  
+5.              
+6.             if( mOnItemClickListener!= null){  
+7.                 holder. itemView.setOnClickListener( new OnClickListener() {  
+8.                        
+9.                       @Override  
+10.                       public void onClick(View v) {  
+11.                            mOnItemClickListener.onClick(position);  
+12.                      }  
+13.                 });  
+14.                   
+15.                 holder. itemView.setOnLongClickListener( new OnLongClickListener() {  
+16.                       @Override  
+17.                       public boolean onLongClick(View v) {  
+18.                            mOnItemClickListener.onLongClick(position);  
+19.                             return false;  
+20.                      }  
+21.                 });  
+22.            }  
+23.      }<span style="color:#333333;">  
+24. </span>  
+在MainAcitivity中增加
+[java] view plain copy
+
+
+ 
+
+
+1. recycleAdapter.setOnItemClickListener(new OnItemClickListener() {  
+2.                
+3.               @Override  
+4.               public void onLongClick(int position) {  
+5.                    Toast.makeText(MainActivity.this,"onLongClick事件       您点击了第："+position+"个Item",0).show();  
+6.               }  
+7.                
+8.               @Override  
+9.               public void onClick(int position) {  
+10.                    Toast.makeText(MainActivity.this,"onClick事件       您点击了第："+position+"个Item",0).show();  
+11.               }  
+12.          });  
+然后运行，效果如下：
+
+
+可以看到Item的onClick和onLongClick事件都触发了。到此关于RecyclerView的基本用法就介绍的差不多了,当然，还有几个点没有提到，比方说瀑布流、下拉刷新、上拉加载等，由于篇幅原因这些在后面的更新中都会给大家呈现。最后将本篇博客所提到的知识点做一个整合，写到Demo中，大家可以参考，Demo进行学习。好了，这一篇就到这里了，如果发现什么错误，或者有什么疑问请留言，感谢您的观看，谢谢各位的支持。。。
+转载请注明出处：http://blog.csdn.net/dmk877/article/details/50816933
+
+源码戳这里
+
+
+参考博客：
+http://www.cnblogs.com/tiantianbyconan/p/4232560.html
+http://blog.csdn.net/lmj623565791/article/details/45059587
