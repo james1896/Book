@@ -1,0 +1,363 @@
+3分钟实现iOS语言本地化/国际化（图文详解）
+
+http://www.jianshu.com/p/88c1b65e3ddb
+
+
+144  作者 VV木公子 关注
+2016.06.20 18:14* 字数 4204 阅读 11684评论 57喜欢 200
+前言
+
+语言本地化，又叫做语言国际化。是指根据用户操作系统的语言设置，自动将应用程序的语言设置为和用户操作系统语言一致的语言。往往一些应用程序需要提供给多个国家的人群使用，或者一个国家有多种语言，这就要求应用程序所展示的文字、图片等信息，能够让讲不同语言的用户读懂、看懂。进而提出为同一个应用程序适配多种语言，也即是国际化。语言国际化之所以又叫做语言本地化，这是站在每个用户的角度而言的，是指能够让用户本地、本土人群能够看懂的语言信息，顾名思义，语言本地化。其实语言本地化 == 语言国际化！
+本文将分如下7个主要章节一步一步讲解如何完全本地化一个App。
+
+配置需要国际化的语言（国际化的准备工作）
+App名称本地化
+代码中字符串本地化
+多人开发情况下的字符串本地化
+图片本地化（两种方式两种方式）
+查看/切换本地语言
+storyboard/xib本地化
+配置需要国际化的语言
+
+配置需要国际化的语言，这也是国际化之前的准备工作，无论我们是国际化App名称、代码中的字符串、图片、还是storyboard和xib，都需要进行这一步的准备工作（一个项目中需要且仅需要配置一次）。
+
+选中project->Info->Localizations，然后点击"+"，添加需要国际化/本地化的语言，如下图（默认需要勾选Use Base Internationalization）：
+
+Snip20160616_15.png
+此处以添加法语为例，如下图：
+
+
+Snip20160616_18.png
+弹出如下对话框，直接点击finish，如下图：
+
+
+Snip20160616_21.png
+同理，添加简体中文、繁体中文、韩语，最终结果如下图：
+
+Snip20160616_22.png
+备注： “zh-Hans”和“zh-Hant”是简体中文和繁体中文的缩写。这是标准的缩写。H可大写也可小写。"en"是英语的缩写。ko是韩语的缩写，fr是法语的缩写。其他语言请百度各国语言缩写即可查询。
+
+（一）应用名称本地化/国际化
+
+应用名称本地化，是指同一个App的名称，在不同的语言环境下（也就是手机设备的语言设置）显示不同的名称。比如，微信在简体中文环境下App名称显示为“微信”，在英语环境下显示为“weChat”。下面就开始进行应用名称本地化。
+
+选中Info.plist，按下键盘上的command + N，选择Strings File（iOS->Resource->Strings File）
+
+Snip20160616_10.png
+文件名字命名为InfoPlist，且必须是这个名字（因每个人电脑设置差异，此处本人电脑没有显示strings后缀名）:
+
+Snip20160616_11.png
+点击create后，Xcode左侧导航列表就会出现名为InfoPlist.strings的文件，如下图：
+
+Snip20160616_13.png
+选中InfoPlist.strings，在Xcode的File inspection（Xcode右侧文件检查器）中点击Localize，目的是选择我们需要本地化的语言，如下图：
+注意：在点击Localize之前，一定要保证我们已经添加了需要本地化的语言，也就是上面配置需要国际化的语言那一步（步骤：project->Info->Localizations，然后点击"+"，添加需要国际化/本地化的语言）。
+
+Snip20160616_14.png
+点击Localize后，会弹出一个对话框，展开对话框列表，发现下拉列表所展示的语言正是我们在上面配置的需要国际化的语言，选择我们需要本地化的语言，然后点击对话框的Localize按钮，如下图：
+
+Snip20160617_10.png
+
+Snip20160617_12.png
+
+注意：如果我们没有在 PROJECT 中配置需要国际化的语言（project->Info->Localizations，然后点击"+"），上图下拉列表中将只会出现"Base"和"English"选项，English语言是系统默认的语言，其他需要国际化的语言（例如中文简体、法语）必须通过上面的配置本地化语言那一步手动添加。
+
+然后我们发现Xcode右侧的File inspection变成了下图的样式：
+
+Snip20160617_13.png
+接下来，勾选French、Chinese（zh-Hans）、Chinese（zh-Hant）、Korean，如下图：
+
+Snip20160617_14.png
+此时，Xcode左侧的InfoPlist.stirings左侧多了一个箭头，点击箭头可以展开，如下图所示：
+
+Snip20160617_15.png
+从上图可以看出，InfoPlist.strings文件下包含了English、French、Chinese（Simplified）、Chinese（Traditional）、Korean这五种语言的文件。
+原理：程序启动时，会根据操作系统设置的语言，自动加载InfoPlist.strings文件下对应的语言文件，然后显示应用程序的名字。
+
+接下来，我们分别用不同的语言给InfoPlist.strings下的文件设置对应的名字。
+（1）在InfoPlist.strings(english)中加入如下代码：
+
+// Localizable App Name是App在英语环境环境下显示的名称
+CFBundleDisplayName = "Localizable App Name";
+备注：CFBundleDisplayName可以使用双引号，也可以不使用双引号！
+
+
+Snip20160617_21.png
+（2）在InfoPlist.strings(French)中加入如下代码：
+
+CFBundleDisplayName = "Le nom de la localisation de l'App";
+
+Snip20160617_27.png
+（3）在InfoPlist.strings(Chinese(Simplified))中加入如下代码：
+
+CFBundleDisplayName = "国际化App名称";
+
+Snip20160617_32.png
+（4）在InfoPlist.strings(Chinese(Traditional))中加入如下代码：
+
+CFBundleDisplayName = "國際化App名稱";
+
+Snip20160617_30.png
+（5）在InfoPlist.strings(Korean)中加入如下代码：
+
+CFBundleDisplayName = "현지화 앱 명칭";
+
+Snip20160617_31.png
+修改模拟器语言环境为English。App名称如下图：
+
+
+Snip20160617_33.png
+修改模拟器语言环境为Chinese(Simplified)。App名称如下图：
+
+
+Snip20160618_4.png
+修改模拟器语言环境为Chinese(Traditional)。App名称如下图：
+
+
+Snip20160618_5.png
+修改模拟器语言环境为Franch。App名称如下图：
+
+
+Snip20160618_6.png
+修改模拟器语言环境为Korean。App名称如下图：
+
+
+Snip20160618_7.png
+备注：过去本地化App名称，需要在Info.plist文件中增加一个名为“Application has localized display name”的BOOL类型的Key，并且需要将其值设置为YES（如下图）。目的是让App支持本地化App名称。但现在可以忽略这一步。
+
+
+Snip20160618_8.png
+至此，本地化App名称已经演示完毕，其步骤就是：
+
+在Project的设置中通过点击"+"添加需要本地化的语言。
+然后在Xcode右侧的File inspection中点击Localize，选中需要本地化App名称的语言。
+最后在每个语言对应的文件中以key = value(CFBundleDisplayName = "App名称";);的形式设置App的名称。
+（二）代码中字符串的本地化
+
+所谓字符串本地化，就是指App内的字符串在不同的语言环境下显示不同的内容。比如，"主页"这个字符串在中文语言环境下显示“主页”，在英语环境下显示“home”。下面就开始进行字符串本地化。
+其实字符本地化和App名称本地化过程如出一辙，只是创建的文件名成不一样（连同后缀一起，文件名必须是Localizable.strings），其他步骤完全相同。为了能够让大家彻底了解，此处还是会把步骤一一贴出来。
+
+和应用名称本地化一样，首先需要command + N，选择iOS -> Resource -> Strings File
+
+文件名必须命名为Localizable
+备注：因本人电脑取消隐藏文件后缀名，所以会自动补全.strings后缀名。
+
+Snip20160619_8.png
+文件创建成功，查看Xcode左侧导航列表，发现多了一个名为Localizable.strings的文件，如下图：
+
+Snip20160619_4.png
+选中Localizable.strings文件，在Xcode的File inspection中点击Localize，目的是选择我们需要本地化的语言（和本地化App名称同理），如下图：
+
+依次选择English->Localize，如下图：
+
+
+然后我们发现Xcode右侧的File inspection变成了下图的样式：
+
+然后勾选French、Chinese（zh-Hans）、Chinese（zh-Hant）、Korean，如下图：
+
+此时，Xcode左侧的Localizable.stirings左侧多了一个箭头，展开后，如下图所示：
+
+Snip20160619_6.png
+然后我们只需要在Localizable.strings下对应的文件中，分别以Key-Value的形式，为代码中每一个需要本地化的字符串赋值，如下图：
+
+Snip20160619_9.png
+
+Snip20160619_10.png
+
+Snip20160619_12.png
+
+Snip20160619_13.png
+
+Snip20160619_14.png
+本地化代码中的字符串，如下图：
+
+Snip20160619_15.png
+我们只需要使用Foundation框架自带的NSLocalizedString(key, comment)这个宏根据Key获取对应的字符串，然后赋值给代码中的字符串。
+// NSLocalizedString(key, comment) 本质
+// NSlocalizeString 第一个参数是内容,根据第一个参数去对应语言的文件中取对应的字符串，第二个参数将会转化为字符串文件里的注释，可以传nil，也可以传空字符串@""。
+#define NSLocalizedString(key, comment) [[NSBundle mainBundle] localizedStringForKey:(key) value:@"" table:nil]
+不同语言环境下运行效果，如下图：
+英语环境下：
+
+Snip20160619_17.png
+法语环境下：
+
+Snip20160619_18.png
+简体中文环境下：
+
+Snip20160619_19.png
+繁体中文环境下：
+
+Snip20160619_20.png
+韩语环境下：
+
+Snip20160619_23.png
+如此一来，我们就实现了代码中字符串的本地化。
+
+技巧
+
+其实，我们不需要给Localizable.strings(English)文件添加Key-Value。原因如下：系统根据某个key去获取对应的字符串时，如果没有找到，那么就会以key作为value返回。所以如果我们在Localizable.strings(English)文件中没有添加 click = "hit";那么在english环境下btn最终显示的title会是click.
+切换语言无需在模拟器中设置，只需要在Xcode中进行如下设置： Edit->Scheme->Run->Arguments Passed On Launch ->-AppleLanguages (语言代码)。例如，我们模拟器此时虽然是韩语，如果通过上述步骤设置为zh-Hans，那么语言环境将会变为汉语，如下图：
+
+Snip20160619_26.png
+
+Snip20160619_28.png
+运行效果：
+
+Snip20160619_29.png
+如此一来，切换语言变得更加简单，无需在模拟器的设置中进行繁琐的语言切换。
+（三）多人开发情况下的字符串本地化
+
+项目开发中，独立开发的还是少数。经常会有多人开发的情况，这种情况，如果多人同时操作本地化文件，极有可能会存在冲突。另一方面，我们又不希望自己的本地化文件受到对方的污染，也就是说，我们不希望对方操作我们的本地化文件。但是上面介绍的代码中字符串的本地化是使用的是默认的文件名"Localizable",因为启动程序时，系统将根据语言加载相应的文件得到其对应的字符串文件，这个字符串可以通过系统将NSLocalizedString中的宏生成名为“Localizable.strings”的文件。那么如何让系统加载我们自己命名的本地化文件而非系统默认的Localizable.strings呢？这就是 NSLocalizedStringFromTable(<#key#>, <#tbl#>, <#comment#>)的用处。
+也就是说，如果你的strings文件名字不是Localizable而是自定义的话，如VVS.strings，那么你就得使用NSLocalizedStringFromTable这个宏来读取本地化字符串。
+
+// key：系统根据key取字符串
+// tbl：自定义strings文件的名字
+// comment：可以不传
+    NSLocalizedStringFromTable(<#key#>, <#tbl#>, <#comment#>)
+
+Snip20160619_32.png
+#import "ViewController.h"
+
+@interface ViewController ()
+@property (weak, nonatomic) IBOutlet UIButton *btn;
+
+@end
+
+@implementation ViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+
+    NSString *title = NSLocalizedStringFromTable(@"click", @"VVS", nil);
+    [self.btn setTitle:title forState:UIControlStateNormal];
+}
+
+@end
+运行效果，如下图：
+
+Snip20160619_33.png
+如此一来，我们就可以挣脱别人的strings文件和系统默认的Localizable.strings文件，自己另起炉灶。
+
+（四）图片本地化
+
+本地化图片，有两种方式，第一种方式和本地化代码中的字符串一样，通过NSLocalizedString(key,comment)来获取相应的字符串，然后根据这个字符串再获取图片。
+
+方式一
+
+NSString *imageName = NSLocalizedString(@"icon", nil);
+UIImage *image = [UIImage imageNamed:imageName];
+self.imageView.image = image;
+方式二
+
+首先需要添加需要本地化的语言，具体步骤参考第一章配置需要国际化的语言。因为我演示的demo中在本地化App名称时已经添加了需要国际化的语言。所以不需要再设置。
+
+将图片拖入工程中，例如“icon.png”，然后选中icon.png，展开Xcode右侧的file Inspection，点击Localize，如下图:
+
+Snip20160619_36.png
+然后，右击icon.png->show in Finder，我们发现在en.Iproj文件中多了一个名为icon.png的图片，如下图：
+
+Snip20160619_38.png
+当然，zh-Hans.Iproj文件夹下并没有图片，如下图：
+
+Snip20160619_39.png
+我们只需给zh-Hans.Iproj添加一个名字也为icon.png的图片。如下图：
+
+Snip20160619_40.png
+然后把zh-Hans.Iproj中的icon.png拖到Xcode中，如下图：
+
+Snip20160619_43.png
+然后发现，icon.png左边出现了一个可以展开的三角形。如下图：
+
+Snip20160619_44.png
+展开后发现里面包含两张图片，如下图：
+
+Snip20160619_45.png
+然后控制器中添加如下代码：
+
+#import "ViewController.h"
+
+@interface ViewController ()
+@property (weak, nonatomic) IBOutlet UIImageView *imageView;
+
+@end
+
+@implementation ViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+
+    NSString *imageName = NSLocalizedString(@"icon", nil);
+    UIImage *image = [UIImage imageNamed:imageName];
+    self.imageView.image = image;
+}
+
+@end
+english环境下运行效果如下：
+
+Snip20160620_46.png
+中文环境改下运行效果如下：
+
+Snip20160620_47.png
+其他语言环境，例如法语、中文繁体、韩语，操作步骤完全和上面相同。都是在对应的.Iproj文件夹下添加同名的图片，然后把图片拖放到Xcode中，不再赘述。
+（五）查看/切换本地语言
+
+原理：应用启动时，首先会读取NSUserDefaults中的key为AppleLanguages对应的value，该value是一个String数组，也就是说，我们访问这个名为AppleLanguages的key可以返回一个string数组，该数组存储着APP支持的语言列表，数组的第一项为APP当前默认的语言。
+
+#import "ViewController.h"
+
+@interface ViewController ()
+
+@end
+
+@implementation ViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+
+    NSArray *languages = [[NSUserDefaults standardUserDefaults] valueForKey:@"AppleLanguages"];
+    NSString *currentLanguage = languages.firstObject;
+    NSLog(@"模拟器当前语言：%@",currentLanguage);
+}
+@end
+-控制台打印结果：
+
+
+Snip20160620_1.png
+同理，既然我们可以通过AppleLanguages这个key从NSUserDefaults中取出语言数组，那么我们也可以给AppleLanguages这个key赋值来达到切换本地语言的效果，从此以后，我们就无需频繁的去模拟器的设置->通用->语言与地区 中切换语言。
+
+#import "ViewController.h"
+
+@interface ViewController ()
+
+@end
+
+@implementation ViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+
+    // 切换语言前
+    NSArray *langArr1 = [[NSUserDefaults standardUserDefaults] valueForKey:@"AppleLanguages"];
+    NSString *language1 = langArr1.firstObject;
+    NSLog(@"模拟器语言切换之前：%@",language1);
+
+    // 切换语言
+    NSArray *lans = @[@"en"];
+    [[NSUserDefaults standardUserDefaults] setObject:lans forKey:@"AppleLanguages"];
+
+    // 切换语言后
+    NSArray *langArr2 = [[NSUserDefaults standardUserDefaults] valueForKey:@"AppleLanguages"];
+    NSString *language2 = langArr2.firstObject;
+    NSLog(@"模拟器语言切换之后：%@",language2);
+}
+@end
+
+Snip20160620_2.png
+回想一下，我在上面的技巧一节中提过：切换语言无需在模拟器中设置，只需要在Xcode中进行如下设置： Edit->Scheme->Run->Arguments Passed On Launch ->-AppleLanguages (语言代码)。其实本质上就是给NSUserDefaults中名为AppleLanguages的key赋值。
+未完待续...
+
+文／VV木公子（简书作者）
+PS:如非特别说明，所有文章均为原创作品，著作权归作者所有，转载转载请联系作者获得授权，并注明出处，所有打赏均归本人所有！
+
+如果您是iOS开发者，或者对本篇文章感兴趣，请关注本人，后续会更新更多相关文章！敬请期待！
