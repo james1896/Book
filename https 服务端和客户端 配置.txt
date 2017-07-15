@@ -1,10 +1,38 @@
 https 服务端和客户端 配置
 http://www.cnblogs.com/liyulong1982/p/6106129.html
 
-
 iOS 迁移到HTTPS（自建证书+单向验证+AF3.0+WKWebView+SDWebImage）
 http://blog.csdn.net/zhaojinqiang12/article/details/53695615
 
 
 python Flask 使用https 安全协议
 http://blog.csdn.net/shenzhan168/article/details/47783651
+
+
+
+
+
+
+** 遇到的问题
+
+==========
+在服务器人员，给你发送的crt证书后，进到证书路径，执行下面语句 
+openssl x509 -in 你的证书.crt -out你的证书.cer -outform der 
+==========
+
+
+
+===========
+
+Error Domain=NSURLErrorDomain Code=-1200 "An SSL error has occurred and a se
+
+?????????????
+
+在plist文件中添加
+<key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <true/>
+    </dict> 
+==============
+
