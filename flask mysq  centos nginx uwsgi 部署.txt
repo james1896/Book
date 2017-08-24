@@ -1,0 +1,6 @@
+CentOS 下用 Nginx 和 uwsgi 部署 flask 项目
+https://segmentfault.com/a/1190000004294634
+
+
+centos6.5下配置mysql+python-flask
+http://blog.csdn.net/u010551621/article/details/44269219
