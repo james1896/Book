@@ -1,3 +1,14 @@
+
+
+基于tensorflow的MNIST手写数字识别（二）--入门篇
+http://www.jianshu.com/p/4195577585e6
+
+
+机器学习进阶路上不可错过的 28 个视频
+http://blog.csdn.net/haifengid/article/details/51900632
+
+
+
 机器学习系列01——机器学习需要这些数学知识
 
 http://blog.csdn.net/jonsen_hb/article/details/50640930 (一共五篇文章)
