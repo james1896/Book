@@ -5,3 +5,13 @@ http://www.mooc.ai/course/82
 
 当当为何长不大？
 http://money.163.com/14/0414/14/9PQ4N6ET00253G87.html
+
+
+###########################################
+iOS Apple Pay详解以及处理支付逻辑(附带Demo)
+http://www.jianshu.com/p/8d7b86f1d142
+
+
+Apple Pay接入详细教程
+http://www.cocoachina.com/ios/20160226/15443.html
+###########################################
